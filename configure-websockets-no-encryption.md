@@ -27,7 +27,9 @@ Run the 'locale' command and make sure you have a valid locale set.  For a US En
 
 ## 2. Set up MQTT read/write access control:
 
-### Set up the /etc/mosquitto/aclfile 
+You'll have to `sudo bash` to open a bash shell for these steps.
+
+### Create the /etc/mosquitto/aclfile 
 
 This example sets up read/write access for a 'weemqtt' user to a number of possible MQTT topics.
 
@@ -44,7 +46,7 @@ This example sets up read/write access for a 'weemqtt' user to a number of possi
     pattern write $SYS/broker/connection/%c/state
 
     
-### Set up the /etc/mosquitto/pwfile
+### Create the /etc/mosquitto/pwfile
 
 This file contains the example MQTT read/write user and its encrypted password.  This example follows a multi-step procedure so you have a cleartext file (appropriately secured) with the user:pass so it's not forgotten or misplaced.
  
@@ -52,7 +54,7 @@ First create a cleartext /etc/mosquitto/pskfile containing the example read/writ
 
     weemqtt:weepass
 
-Next generate a `/etc/mosquitto/pwfile` which will contain the encrypted password rather than a cleartext one. You'll have to `sudo bash` to open a bash shell for these steps.
+Next generate a `/etc/mosquitto/pwfile` which will contain the encrypted password rather than a cleartext one. 
 
 
     cp /etc/mosquitto/pskfile /etc/mosquitto/pwfile
@@ -67,7 +69,7 @@ Next generate a `/etc/mosquitto/pwfile` which will contain the encrypted passwor
     chown mosquitto:mosquitto /etc/mosquitto/pskfile /etc/mosquitto/pwfile
 
 
-### Set up the mosquitto config file
+### Create the mosquitto site configuration file
 
 Create `/etc/mosquitto/conf.d/local.conf` containing the following.  Again you'll need to be in a root shell to do this.
 
@@ -82,7 +84,7 @@ Create `/etc/mosquitto/conf.d/local.conf` containing the following.  Again you'l
     protocol websockets
 
 
-### Enable logging via mosquitto.conf as needed
+### (optional) Enable logging via mosquitto.conf as needed
 
 If you want to log verbosely to `/var/log/mosquitto/mosquitto.log`, add and uncomment the appropriate liness below to your /`etc/mosquitto/mosquitto.conf` file.  Again root is needed to do this.
 
@@ -103,7 +105,7 @@ Mosquitto mosquitto.conf:
     # log_type all
 
 
-### Verify your permissions
+## 3. Verify your permissions
 
 Mosquitto is 'very' sensitive to permissions, and we want to make sure your acl and usernames/passwords are appropriately secured. Run `find /etc/mosquitto | exec ls -lad {} \;` and examine the output.
 
@@ -125,14 +127,84 @@ The command output should look like the following (lightly edited to line the co
     -rwx------ 1 mosquitto mosquitto  335 Feb 17 16:08 /etc/mosquitto/acl
     -rwx------ 1 mosquitto mosquitto  121 Feb 16 15:36 /etc/mosquitto/pwfile
 
-### Restart mosquitto and retest
+## 4. Restart mosquitto and retest
 
     sudo systemctl restart mosquitto
+
+Test 1:
+
     # verify it started ok and is listening on 1883 and 9001
-    # retest sub fails no user/pass
-    # retest pub fails no user/pass
-    # retest no world read
-    # retest sub with user/pass
-    # retest pub with user/pass
+
+Test 2:
+
+        # retest sub fails no user/pass
+
+Test 3:
+
+        # retest pub fails no user/pass
+
+Test 4:
+
+        # retest no world read
+
+Test 5:
+
+        # retest sub with user/pass
+
+Test 6:
+
+        # retest pub with user/pass
   
   At this point you can now reconfigure weewx.conf to use websockets
+
+
+## 5. Reconfigure WeeWX to use websockets
+
+>[!CAUTION]
+> Substitute in your ip address or fully-qualified-domain-name or hostname for nnn.nnn.nnn.nnn in the following section.  It is 'critically' important these two match. If you use a name it must resolve successfully on all clients you want to be able to access your site via websockets.
+
+Edit the weewx.conf MQTT section to match your URLs so that weewx publishes to the mosquitto broker you just configured and restarted.
+
+```
+    [[MQTT]]
+        enable = true
+        server_url = mqtt://weemqtt:weepass@nnn.nnn.nnn.nnn:1883/
+        topic = weather
+        aggregation = aggregate
+        binding = loop,archive
+        log_success = false        # set true initially to see publishing succeed via your weewx logs
+        log_failure = true
+```
+
+Edit the Belchertown section of weewx.conf mqtt-related settings:
+
+```
+           mqtt_websockets_enabled = 1
+           mqtt_websockets_host = nnn.nnn.nnn.nnn
+           mqtt_websockets_port = 9001
+           mqtt_websockets_ssl = 0
+           mqtt_websockets_topic = weather/loop
+           mqtt_websockets_username = weemqtt
+           mqtt_websockets_password = weepass
+           disconnect_live_website_visitor = 1800000
+           show_last_updated_alert = 0
+           last_updated_alert_threshold = 1800
+           webpage_autorefresh = 0
+```
+
+Finally restart weewx and check your weewx logs for errors.  If you have `log_success = true` above (recommended at least initially) you should see weewx publishing to your broker.
+
+    TODO - example output when it works
+
+You might also try to subscribe with username/password to the weewx topic you are publishing to.
+
+    mosquitto_sub -t weather/loop -h nnn.nnn.nnn.nnn -u weemqtt -P weepass
+        or
+    mosquitto_sub -t weather/loop -h some_name_here -u weemqtt -P weepass
+
+Again, if you use names, be consistent or it will.not.succeed.
+
+
+## 6. Test it all out end to end
+
+    TODO TODO TODO

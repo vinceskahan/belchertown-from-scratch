@@ -121,12 +121,8 @@ TO DO - how to edit the various files and their permissions
 
 ### 8. reconfigure weewx and the Belchertown skin to use websockets
 
+Temporary - the configure-websockets-no-encryption document here for the long howto....
 
-See [THIS](configure-websockets-no-encryption) for the details.
-
-````
-TO DO - snippets for MQTT and Belchertown sections to edit into place
-````
 
 ### 9. restart weewx
 Again, normal weewx procedures apply, typically `sudo systemctl restart weewx`
