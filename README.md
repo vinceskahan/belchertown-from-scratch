@@ -7,7 +7,7 @@ The intent of this document is to do a step-by-step walkthrough of how to get th
 
 There are two variants of Belchertown at this time:
 * the original by Pat O'Brien -  [(link)](https://github.com/poblabs/weewx-belchertown)
-* the fork at by 'uajqq' -  [(link)](https://github.com/uajqq/weewx-belchertown-new)
+* the fork by 'uajqq' -  [(link)](https://github.com/uajqq/weewx-belchertown-new)
 
 Both variants are installed and configured identically.  The only difference is that the fork is under active development at this time.  The original Belchertown has not been updated in a couple years.
 
@@ -45,11 +45,11 @@ Note - For 'pip'installations remember to activate your python venv before runni
 
 ### 2. Install a webserver and integrate it with WeeWX
 
-* sudo apt install -y nginx
-* sudo mkdir /var/www/html/weewx
+* `sudo apt install -y nginx`
+* `sudo mkdir /var/www/html/weewx`
 * for pip installations:
-    * ln -s /home/YOURUSER/weewx-data/archive /var/www/html/weewx
-    * sudo chown YOURUSER /var/www/html/weewx
+    * `ln -s /home/YOURUSER/weewx-data/archive /var/www/html/weewx`
+    * `sudo chown YOURUSER /var/www/html/weewx`
 * for packaged installations:
     * typically the package installer will do the right thing for you
 
@@ -57,11 +57,8 @@ The result is that your weewx web pages will be a `http://YOURHOSTHERE/weewx` by
     
 ### 3. Install the Belchertown skin
 
-Follow the normal weewx procedure using the 'weectl extension install' command
+Run `weectl extension install` and specify the URL of the skin:
 
-    * weectl extension install URL_HERE
-
-Use the appropriate URL for the variant you are installing:
 * for the original Belchertown:
     * `https://github.com/poblabs/weewx-belchertown/archive/refs/heads/master.zip`
 * for the fork:
@@ -81,6 +78,9 @@ Initial default setup will write Belchertown skin output to a 'belchertown' (low
 Normal weewx procedures apply, typically `sudo systemctl restart weewx`
 
 Check your system logs to ensure weewx works reliably through a couple report cycles.
+
+>[!NOTE]
+> Belchertown can throw an error or two the first time it runs on a clean system with a new database.  These clear up the second time the skin runs.
 
 By default if you are using http (not https) you may see errors related to 'Windy' trying to load a map over https. This is not a WeeWX nor Belchertown error.  Browsers typically no longer like web pages that are unencrypted over http 'also' referencing pages that are encrypted using https.  Just ignore those errors for now...
 
@@ -109,6 +109,7 @@ Install the paho-mqtt library
 
 ### 7. configure and test the mosquitto broker
 
+
 Initial test - pub/sub with no user/pass using localhost
 
 Then set up user/pass/acl and desired acl restrictions and retest pub/sub and acl work as desired
@@ -119,6 +120,9 @@ TO DO - how to edit the various files and their permissions
 ````
 
 ### 8. reconfigure weewx and the Belchertown skin to use websockets
+
+
+See [THIS](configure-websockets-no-encryption) for the details.
 
 ````
 TO DO - snippets for MQTT and Belchertown sections to edit into place
@@ -234,15 +238,18 @@ log_dest file /var/log/mosquitto/mosquitto.log
 include_dir /etc/mosquitto/conf.d
 
 #---- dial up the logging ----
-log_type debug
-log_type error
-log_type warning
-log_type notice
-log_type information
-log_type subscribe
-log_type unsubscribe
-log_type websockets
-log_type all
+# uncomment some or all of these for more logging
+# (they can be 'very' verbose)
+#
+# log_type debug
+# log_type error
+# log_type warning
+# log_type notice
+# log_type information
+# log_type subscribe
+# log_type unsubscribe
+# log_type websockets
+# log_type all
 ```
 
 weewx.conf MQTT section:
