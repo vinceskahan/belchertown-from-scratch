@@ -45,15 +45,17 @@ Note - For 'pip'installations remember to activate your python venv before runni
 
 ### 2. Install a webserver and integrate it with WeeWX
 
-* `sudo apt install -y nginx`
-* `sudo mkdir /var/www/html/weewx`
-* for pip installations:
-    * `ln -s /home/YOURUSER/weewx-data/archive /var/www/html/weewx`
-    * `sudo chown YOURUSER /var/www/html/weewx`
+  * `sudo apt install -y nginx`
+  * `sudo mkdir /var/www/html`
+
+  * for pip installations:
+    * `sudo mkdir -p /var/www/html/weewx`
+    * `sudo chown pi /var/www/html/weewx`
+    * `sudo ln -s /var/www/html/weewx /home/YOURUSER/weewx-data/public_html`
 * for packaged installations:
     * typically the package installer will do the right thing for you
 
-The result is that your weewx web pages will be a `http://YOURHOSTHERE/weewx` by default
+The result is that your weewx web pages will be at `http://YOURHOSTHERE/weewx` by default
     
 ### 3. Install the Belchertown skin
 
@@ -109,15 +111,27 @@ Install the paho-mqtt library
 
 ### 7. configure and test the mosquitto broker
 
+Do a quick test of mosquitto publish/subscribe to verify it is known-good before we proceed to configuring access control and reconfiguring weewx and Belchertown to match...
 
-Initial test - pub/sub with no user/pass using localhost
 
-Then set up user/pass/acl and desired acl restrictions and retest pub/sub and acl work as desired
+  
+    ````
+    # listen for messages on topic 'testing' in the background
+    (weewx-venv) $ mosquitto_sub -h localhost -t testing &
+    [1] 2117
 
-````
-TO DO - more details on how
-TO DO - how to edit the various files and their permissions
-````
+    # publish a message, you should see the message shown
+    (weewx-venv) $ mosquitto_pub -h localhost -t testing -m testing123
+    testing123
+
+    # kill the background mosquitto_sub process
+    (weewx-venv) $ kill %1
+
+    (weewx-venv) $ jobs
+    [1]+  Done                    mosquitto_sub -h localhost -t testing
+
+    ````
+
 
 ### 8. reconfigure weewx and the Belchertown skin to use websockets
 

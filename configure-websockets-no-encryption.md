@@ -1,5 +1,6 @@
-# Configuring websockets without encryption
+# Configure websockets without encryption
 
+Now that we know mosquitto itself is up and running correctly without any access control, we can move on to enabling mosquitto access control and reconfiguring WeeWX and the Belchertown skin for websockets.
 
 ## 1. Check your locale
 
@@ -22,8 +23,7 @@ Run the 'locale' command and make sure you have a valid locale set.  For a US En
     LC_ALL=
     
 
-    If the locale isn't set properly, consult your os for how to reconfigure your system locale.
-    (TO DO - debian instructions)
+If the locale isn't set properly, consult your os documentation for how to reconfigure your system locale.  For a raspberry pi you can run `sudo raspi-config` and pick the Localization => Locale option in the menu.
 
 ## 2. Set up MQTT read/write access control:
 
@@ -33,81 +33,93 @@ You'll have to `sudo bash` to open a bash shell for these steps.
 
 This example sets up read/write access for a 'weemqtt' user to a number of possible MQTT topics.
 
-    topic read $SYS/#
+* create the file
 
-    #--- weewx related ---
-    # user r/w for these topics
-    user weemqtt
-    topic weewx/#
-    topic weetest/#
-    topic weather/#
+        topic read $SYS/#
 
-    # This affects all clients.
-    pattern write $SYS/broker/connection/%c/state
+        #--- weewx related ---
+        # user r/w for these topics
+        user weemqtt
+        topic weewx/#
+        topic weetest/#
+        topic weather/#
 
-    
-### Create the /etc/mosquitto/pwfile
+        # This affects all clients.
+        pattern write $SYS/broker/connection/%c/state
 
-This file contains the example MQTT read/write user and its encrypted password.  This example follows a multi-step procedure so you have a cleartext file (appropriately secured) with the user:pass so it's not forgotten or misplaced.
+* and set its permissions correctly
+
+        chown mosquitto:mosquitto /etc/mosquitto/aclfile
+        chmod 0700 /etc/mosquitto/aclfile
+
+
+### Create Mosquitto password files
+
+This example follows a multi-step procedure so you have a cleartext file (appropriately secured) with the user:pass so it's not forgotten or misplaced.
  
-First create a cleartext /etc/mosquitto/pskfile containing the example read/write user:password for reference:
+* First create a cleartext /etc/mosquitto/pskfile containing the example read/write user:password for reference:
 
-    weemqtt:weepass
+        weemqtt:weepass
 
-Next generate a `/etc/mosquitto/pwfile` which will contain the encrypted password rather than a cleartext one. 
+* Next generate a `/etc/mosquitto/pwfile` which will contain the encrypted password rather than a cleartext one. 
 
 
-    cp /etc/mosquitto/pskfile /etc/mosquitto/pwfile
-    mosquitto_passwd -U /etc/mosquitto/pwfile
+        # copy the reference file to the final destination
+        cp /etc/mosquitto/pskfile /etc/mosquitto/pwfile
 
-    # (ignore complaint about ownership and permissions)
+        # convert the pwfile to encrypt the password therein
+        mosquitto_passwd -U /etc/mosquitto/pwfile
 
-    # the output should look something like:
-    weemqtt:$7$101$a14xGSHNx4BHY3vF$OlDvizhNhZYhrzUBH+SKEmLJTgwnwZJqqMTECsMu6Xw5iFfBI8ETKJ+xckOM0qA3SDPC6d1fQKLTCh7yf6CzLQ==
+        # ignore the complaint about ownership and permissions
+        # the output should look something like:
+        weemqtt:$7$101$a14xGSHNx4BHY3vF$OlDvizhNhZYhrzUBH+SKEmLJTgwnwZJqqMTECsMu6Xw5iFfBI8ETKJ+xckOM0qA3SDPC6d1fQKLTCh7yf6CzLQ==
 
-    chmod 700 /etc/mosquitto/pskfile /etc/mosquitto/pwfile
-    chown mosquitto:mosquitto /etc/mosquitto/pskfile /etc/mosquitto/pwfile
+* Last - set their permissions correctly
+
+        chmod 700 /etc/mosquitto/pskfile /etc/mosquitto/pwfile
+        chown mosquitto:mosquitto /etc/mosquitto/pskfile /etc/mosquitto/pwfile
 
 
 ### Create the mosquitto site configuration file
 
-Create `/etc/mosquitto/conf.d/local.conf` containing the following.  Again you'll need to be in a root shell to do this.
+This file configures the mosquitto broker to use the aclfile (access control) and pwfile (user authorization), and to listen on the appropriate network ports
+
+* create `/etc/mosquitto/conf.d/local.conf` containing the following:
 
 
-    persistence false
-    allow_anonymous true
-    password_file /etc/mosquitto/pwfile
-    acl_file /etc/mosquitto/acl
-    listener 1883
-    protocol mqtt
-    listener 9001
-    protocol websockets
+        persistence false
+        allow_anonymous true
+        password_file /etc/mosquitto/pwfile
+        acl_file /etc/mosquitto/acl
+        listener 1883
+        protocol mqtt
+        listener 9001
+        protocol websockets
 
 
 ### (optional) Enable logging via mosquitto.conf as needed
 
-If you want to log verbosely to `/var/log/mosquitto/mosquitto.log`, add and uncomment the appropriate liness below to your /`etc/mosquitto/mosquitto.conf` file.  Again root is needed to do this.
+* If you want to (at least temporarily) increase the verbosity of the mosquitto logs, append the following to /etc/mosquitto/mosquitto.conf and uncomment the desired line(s).  This is generally only helpful during initial setup and checkout.  In usual operation the weewx logging should suffice.
 
-Mosquitto mosquitto.conf:
 
-    #---- dial up the logging ----
-    # uncomment some or all of these for more logging
-    # (they can be 'very' verbose)
-    #
-    # log_type debug
-    # log_type error
-    # log_type warning
-    # log_type notice
-    # log_type information
-    # log_type subscribe
-    # log_type unsubscribe
-    # log_type websockets
-    # log_type all
+        #---- append to /etc/mosquitto/mosquitto.conf to dial up the logging ----
+        # uncomment some or all of these for more logging
+        # (they can be 'very' verbose)
+        #
+        # log_type debug
+        # log_type error
+        # log_type warning
+        # log_type notice
+        # log_type information
+        # log_type subscribe
+        # log_type unsubscribe
+        # log_type websockets
+        # log_type all
 
 
 ## 3. Verify your permissions
 
-Mosquitto is 'very' sensitive to permissions, and we want to make sure your acl and usernames/passwords are appropriately secured. Run `find /etc/mosquitto | exec ls -lad {} \;` and examine the output.
+Mosquitto is 'very' sensitive to permissions, and it is necessary to validate your acl and usernames/passwords are appropriately secured. Run `find /etc/mosquitto | exec ls -lad {} \;` and examine the output.
 
 The command output should look like the following (lightly edited to line the columns up):
 
@@ -127,38 +139,81 @@ The command output should look like the following (lightly edited to line the co
     -rwx------ 1 mosquitto mosquitto  335 Feb 17 16:08 /etc/mosquitto/acl
     -rwx------ 1 mosquitto mosquitto  121 Feb 16 15:36 /etc/mosquitto/pwfile
 
+Mosquitto will fail to start if permissions are incorrect on the aclfile and pwfile.  We lock down the pskfile because it is an unused hint file for reference so you can find what the authorized user's encrypted password in the pwfile maps to.
+
 ## 4. Restart mosquitto and retest
 
-    sudo systemctl restart mosquitto
+* Restart mosquitto
 
-Test 1:
+        # sudo systemctl restart mosquitto
 
-    # verify it started ok and is listening on 1883 and 9001
+* Test 1 - verify the configured mosquitto is running
 
-Test 2:
+        # sudo tail /var/log/mosquitto/mosquitto.log
 
-        # retest sub fails no user/pass
+        1771522864: mosquitto version 2.0.21 starting
+        1771522864: Config loaded from /etc/mosquitto/mosquitto.conf.
+        1771522864: Opening ipv4 listen socket on port 1883.
+        1771522864: Opening ipv6 listen socket on port 1883.
+        1771522864: Opening websockets listen socket on port 9001.
+        1771522864: mosquitto version 2.0.21 running
 
-Test 3:
 
-        # retest pub fails no user/pass
+* Test 2 - verify anonymous posting to random topic fails
 
-Test 4:
+        # mosquitto_pub -h localhost -t testing -m 123
 
-        # retest no world read
+        # tail /var/log/mosquitto/mosquitto.log
 
-Test 5:
+        1771523309: New connection from ::1:52338 on port 1883.
+        1771523309: New client connected from ::1:52338 as auto-18063815-7B6B-4A95-3C91-4CF687F04CBA (p2, c1, k60).
+        1771523309: No will message specified.
+        1771523309: Sending CONNACK to auto-18063815-7B6B-4A95-3C91-4CF687F04CBA (0, 0)
+        1771523309: Denied PUBLISH from auto-18063815-7B6B-4A95-3C91-4CF687F04CBA (d0, q0, r0, m0, 'testing', ... (3 bytes))
+        1771523309: Received DISCONNECT from auto-18063815-7B6B-4A95-3C91-4CF687F04CBA
+        1771523309: Client auto-18063815-7B6B-4A95-3C91-4CF687F04CBA disconnected.
 
-        # retest sub with user/pass
 
-Test 6:
+* Test 3 - verify anonymous posting to weather topic in the aclfile fails
 
-        # retest pub with user/pass
+        # mosquitto_pub -h localhost -t weetest/testing -m 123
+
+        # tail /var/log/mosquitto/mosquitto.log
+        1771523141: New connection from ::1:38746 on port 1883.
+        1771523141: New client connected from ::1:38746 as auto-43167224-00A5-25C2-F261-E2BAF47DE530 (p2, c1, k60).
+        1771523141: No will message specified.
+        1771523141: Sending CONNACK to auto-43167224-00A5-25C2-F261-E2BAF47DE530 (0, 0)
+        1771523141: Denied PUBLISH from auto-43167224-00A5-25C2-F261-E2BAF47DE530 (d0, q0, r0, m0, 'weetest/testing', ... (3 bytes))
+        1771523141: Received DISCONNECT from auto-43167224-00A5-25C2-F261-E2BAF47DE530
+        1771523141: Client auto-43167224-00A5-25C2-F261-E2BAF47DE530 disconnected.
+
+
+* Test 4 - verify posting to topic in the aclfile works if user/pass is specified
+
+        # mosquitto_pub -h localhost -t weetest/testing -u weemqtt -P weepass -m testing123
+        
+        # tail /var/log/mosquitto/mosquitto.log
+        1771523540: New connection from ::1:36396 on port 1883.
+        1771523540: New client connected from ::1:36396 as auto-FA93CAAA-CDB8-6DCE-B622-772CF768D0EA (p2, c1, k60, u'weemqtt').
+        1771523540: No will message specified.
+        1771523540: Sending CONNACK to auto-FA93CAAA-CDB8-6DCE-B622-772CF768D0EA (0, 0)
+        1771523540: Received PUBLISH from auto-FA93CAAA-CDB8-6DCE-B622-772CF768D0EA (d0, q0, r0, m0, 'weetest/testing', ... (10 bytes))
+        1771523540: Received DISCONNECT from auto-FA93CAAA-CDB8-6DCE-B622-772CF768D0EA
+        1771523540: Client auto-FA93CAAA-CDB8-6DCE-B622-772CF768D0EA disconnected.
+
   
   At this point you can now reconfigure weewx.conf to use websockets
 
 
-## 5. Reconfigure WeeWX to use websockets
+## 5. Install the weewx-mqtt extension
+
+This example uses Matthew's original weewx-mqtt extension, but other options are available.  See the WeeWX wiki for alternate extensions.
+
+    weectl extension install https://github.com/matthewwall/weewx-mqtt/archive/refs/heads/master.zip
+
+This extension comes set 'enabled' but unconfigured by default, so weewx will fail if you restart it immediately after installing the extension.  We configure it next below.
+
+## 6. Reconfigure WeeWX to use websockets
 
 >[!CAUTION]
 > Substitute in your ip address or fully-qualified-domain-name or hostname for nnn.nnn.nnn.nnn in the following section.  It is 'critically' important these two match. If you use a name it must resolve successfully on all clients you want to be able to access your site via websockets.
@@ -192,19 +247,65 @@ Edit the Belchertown section of weewx.conf mqtt-related settings:
            webpage_autorefresh = 0
 ```
 
+## 7. Restart weewx and check for errors
+
 Finally restart weewx and check your weewx logs for errors.  If you have `log_success = true` above (recommended at least initially) you should see weewx publishing to your broker.
+    
+* If you have rsyslog configured, simply tail the weewxd log
 
-    TODO - example output when it works
+```
+    # tail /var/log/weewx/weewxd.log
+    2026-02-19T10:06:31.715266-08:00 raspberrypi weewxd[2452]: INFO weewx.engine: Starting main packet loop.
+    2026-02-19T10:06:34.092875-08:00 raspberrypi weewxd[2452]: INFO user.mqtt: client established for mqtt://weemqtt:xxx@192.168.1.164:1883/
+    2026-02-19T10:06:34.093807-08:00 raspberrypi weewxd[2452]: INFO weewx.restx: MQTT: Published record 2026-02-19 10:06:34 PST (1771524394)
+    2026-02-19T10:06:36.588580-08:00 raspberrypi weewxd[2452]: INFO weewx.restx: MQTT: Published record 2026-02-19 10:06:37 PST (1771524397)
+```
 
-You might also try to subscribe with username/password to the weewx topic you are publishing to.
+* The systemd `journalctl` comand can also be used
 
-    mosquitto_sub -t weather/loop -h nnn.nnn.nnn.nnn -u weemqtt -P weepass
-        or
-    mosquitto_sub -t weather/loop -h some_name_here -u weemqtt -P weepass
+    ```
 
-Again, if you use names, be consistent or it will.not.succeed.
+    # journalctl -u weewx.service -n 40
 
+    Feb 19 10:06:31 raspberrypi weewxd[2452]: INFO __main__: Starting up weewx version 5.2.0
+    Feb 19 10:06:31 raspberrypi weewxd[2452]: INFO weewx.engine: Clock error is -0.13 seconds (positive is fast)
+    Feb 19 10:06:31 raspberrypi weewxd[2452]: INFO weewx.engine: Using binding 'wx_binding' to database 'weewx.sdb'
+    Feb 19 10:06:31 raspberrypi weewxd[2452]: INFO weewx.manager: Starting backfill of daily summaries
+    Feb 19 10:06:31 raspberrypi weewxd[2452]: INFO weewx.manager: Daily summaries up to date
+    Feb 19 10:06:31 raspberrypi weewxd[2452]: INFO weewx.engine: Starting main packet loop.
+    Feb 19 10:06:34 raspberrypi weewxd[2452]: INFO user.mqtt: client established for mqtt://weemqtt:xxx@192.168.1.164:1883/
+    Feb 19 10:06:34 raspberrypi weewxd[2452]: INFO weewx.restx: MQTT: Published record 2026-02-19 10:06:34 PST (1771524394)
+    Feb 19 10:06:36 raspberrypi weewxd[2452]: INFO weewx.restx: MQTT: Published record 2026-02-19 10:06:37 PST (1771524397)
+    Feb 19 10:06:39 raspberrypi weewxd[2452]: INFO weewx.restx: MQTT: Published record 2026-02-19 10:06:39 PST (1771524399)
+    Feb 19 10:06:41 raspberrypi weewxd[2452]: INFO weewx.restx: MQTT: Published record 2026-02-19 10:06:42 PST (1771524402)
+    Feb 19 10:06:44 raspberrypi weewxd[2452]: INFO weewx.restx: MQTT: Published record 2026-02-19 10:06:44 PST (1771524404)
+    ```
 
-## 6. Test it all out end to end
+## 8. Try it out !!!!
 
-    TODO TODO TODO
+Typically a system reboot makes this process a little easier. Be sure to wait 5-10 minutes to let things stabilize and have WeeWX run the Belchertown report which generates the underlying javascript that makes the realtime updates subscription work under the hood.
+
+* `sudo systemctl reboot`
+* (want 5-10 minutes)
+* open up a browser and navigate to `http://x.x.x.x/weewx/belchertown`
+
+>[!TIP]
+> Patience is needed here.  It takes a few seconds to start showing realtime updates.  If it is failing for some reason it might take 20 seconds to see the Failed message
+> 
+### Expected screens in the browser
+
+* You should see a 'connecting' message - [image](connecting-screen.png)
+* When it works, you will see the following: [image](success-screen.png)
+* If it fails, you will see this: [image](failure-screen.png)
+
+### It failed - now what ?
+If you see a failure:
+* verify the 'Published record' messages are appearing in your WeeWX log
+* verify there are no permission denied or the like in your mosquitto log
+* if both look ok:
+  * reboot the system
+  * wait 10 minutes
+  * fully close your browser
+  * open your browser and try again
+
+For some os and browsers, MacOS Tahoe 26.2 and Safari for example, initial attempts at seeing the Belchertown realtime updates from a raspberry pi on the same LAN tend to fail until you take the reboot, wait, and try again.  Again - patience and persistence is sometimes needed.
