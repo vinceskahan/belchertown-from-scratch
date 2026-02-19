@@ -1,5 +1,9 @@
 # Configure websockets without encryption
 
+## About this document
+
+This document shows how to add websockets support to a WeeWX + Belchertown system that has been previously set up and integrated with a webserver such as nginx.  There are a number of installation and testing steps required.
+
 Now that we know mosquitto itself is up and running correctly without any access control, we can move on to enabling mosquitto access control and reconfiguring WeeWX and the Belchertown skin for websockets.
 
 ## 1. Check your locale
@@ -25,7 +29,7 @@ Run the 'locale' command and make sure you have a valid locale set.  For a US En
 
 If the locale isn't set properly, consult your os documentation for how to reconfigure your system locale.  For a raspberry pi you can run `sudo raspi-config` and pick the Localization => Locale option in the menu.
 
-## 2. Set up MQTT read/write access control:
+## 2. Set up MQTT read/write access control
 
 You'll have to `sudo bash` to open a bash shell for these steps.
 
@@ -294,11 +298,14 @@ Typically a system reboot makes this process a little easier. Be sure to wait 5-
 > 
 ### Expected screens in the browser
 
-* You should see a 'connecting' message - [image](connecting-screen.png)
-* When it works, you will see the following: [image](success-screen.png)
-* If it fails, you will see this: [image](failure-screen.png)
+* You should see a 'connecting' message
+        <p> <img src="connecting-screen.png" alt="connecting" width="600" height="200"><p>
+* When it works, you will see the following:
+        <p> <img src="success-screen.png" alt="connecting" width="600" height="160"><p>
+* If it fails, you will see:
+        <p> <img src="failure-screen.png" alt="connecting" width="560" height="160"><p>
 
-### It failed - now what ?
+## 9. It failed - now what ?
 If you see a failure:
 * verify the 'Published record' messages are appearing in your WeeWX log
 * verify there are no permission denied or the like in your mosquitto log
@@ -309,3 +316,41 @@ If you see a failure:
   * open your browser and try again
 
 For some os and browsers, MacOS Tahoe 26.2 and Safari for example, initial attempts at seeing the Belchertown realtime updates from a raspberry pi on the same LAN tend to fail until you take the reboot, wait, and try again.  Again - patience and persistence is sometimes needed.
+
+
+---
+
+### Testing notes:
+
+This was tested on a Raspberry Pi running the Debian13-based RaspiOS, and also on an AWS Lightsail instance based on Ubuntu 24.04 LTS which is also Debian13-based.   Testing was done with both Chrome and Safari browsers on a variety of iPhone, iPad, and Mac Mini client computers.
+
+#### weewx extensions on the test servers
+```
+$ weectl extension list
+Using configuration file /home/ubuntu/weewx-data/weewx.conf
+Extension Name    Version   Description
+Belchertown       1.7beta2-new-belchertownA clean modern skin with real time streaming updates and interactive charts. Modeled after BelchertownWeather.com
+mqtt              0.24   Upload weather data to MQTT server.
+```
+
+#### pip modules in the venv on the test servers
+```
+$ pip3 list
+Package            Version
+------------------ -----------
+certifi            2026.1.4
+charset-normalizer 3.4.4
+configobj          5.0.9
+ct3                3.4.0.post5
+ephem              4.2
+idna               3.11
+paho-mqtt          2.1.0
+pillow             12.1.1
+pip                24.0
+PyMySQL            1.1.2
+pyserial           3.5
+pyusb              1.3.1
+requests           2.32.5
+urllib3            2.6.3
+weewx              5.2.0
+```

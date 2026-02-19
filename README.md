@@ -1,9 +1,9 @@
->[!Note]
->This is obviously a draft
-
 
 # Belchertown websockets from scratch
 The intent of this document is to do a step-by-step walkthrough of how to get the weewx Belchertown skin working with live data via websockets.
+
+This is documented in two pieces, first the basic weewx and nginx installation and configuration, and then a separate document with how to enable and test websockets and the Belchertown skin end-to-end.
+
 
 There are two variants of Belchertown at this time:
 * the original by Pat O'Brien -  [(link)](https://github.com/poblabs/weewx-belchertown)
@@ -36,7 +36,7 @@ Reconfigure to enable websockets
 * do a final test
 
 ---
-## Install Belchertown
+## Install WeeWX and the Belchertown skin
 
 ### 1. Install weewx
 Follow the weewx QuickStart instructions [(link)](https://www.weewx.com/docs/5.2/)
@@ -93,66 +93,8 @@ By default if you are using http (not https) you may see errors related to 'Wind
 
 Now that WeeWX and Belchertown are stable, we enable websockets support.
 
-### 6. install mosquitto MQTT software and other prerequisites
+Please see [LINK](configure-websockets-no-encryption.md) for the long howto....
 
-Install the mosquitto software:
-````
-sudo apt-get install -y mosquitto mosquitto-clients
-````
-
-Install the paho-mqtt library
-
-* for pip installations
-    * `pip3 install paho-mqtt`
-
-* for packaged installations
-    * `sudo apt-get install python3-paho-mqtt`
-
-
-### 7. configure and test the mosquitto broker
-
-Do a quick test of mosquitto publish/subscribe to verify it is known-good before we proceed to configuring access control and reconfiguring weewx and Belchertown to match...
-
-
-  
-    ````
-    # listen for messages on topic 'testing' in the background
-    (weewx-venv) $ mosquitto_sub -h localhost -t testing &
-    [1] 2117
-
-    # publish a message, you should see the message shown
-    (weewx-venv) $ mosquitto_pub -h localhost -t testing -m testing123
-    testing123
-
-    # kill the background mosquitto_sub process
-    (weewx-venv) $ kill %1
-
-    (weewx-venv) $ jobs
-    [1]+  Done                    mosquitto_sub -h localhost -t testing
-
-    ````
-
-
-### 8. reconfigure weewx and the Belchertown skin to use websockets
-
-Temporary - the configure-websockets-no-encryption document here for the long howto....
-
-
-### 9. restart weewx
-Again, normal weewx procedures apply, typically `sudo systemctl restart weewx`
-
-Check your system logs to ensure weewx works reliably through a couple report cycles.
-
-### 10. do a final test
-
-Now reopen your Belchertown skin output URL and see if it works....
-* you should see 'connecting' for a few seconds
-* then you should see live data updating every few seconds
-
-If you see connection failed....
-````
-TO DO - what do they do ?
-````
 
 ----
 ## Futures
@@ -164,147 +106,8 @@ Add more info on how to encrypt the MQTT traffic and switch to port 8883
 * and how could folks 'securely' run on LAN with access tunneled or proxied back in from Internet ?
 
 ----
-## (FILES BELOW HERE TO BE EVENTUALLY CUT/PASTED IN ABOVE)
-----
 
-## Example files
-
-
-Output of `locale` - (potentially not necessary):
-```
-LANG=en_US.UTF-8
-LANGUAGE=
-LC_CTYPE="en_US.UTF-8"
-LC_NUMERIC="en_US.UTF-8"
-LC_TIME="en_US.UTF-8"
-LC_COLLATE="en_US.UTF-8"
-LC_MONETARY="en_US.UTF-8"
-LC_MESSAGES="en_US.UTF-8"
-LC_PAPER="en_US.UTF-8"
-LC_NAME="en_US.UTF-8"
-LC_ADDRESS="en_US.UTF-8"
-LC_TELEPHONE="en_US.UTF-8"
-LC_MEASUREMENT="en_US.UTF-8"
-LC_IDENTIFICATION="en_US.UTF-8"
-LC_ALL=
-```
-
-Mosquitto acl file:
-```
-topic read $SYS/#
-
-#---------------------
-#--- weewx related ---
-#---------------------
-
-# user r/w for these topics
-user weemqtt
-topic weewx/#
-topic weetest/#
-topic weather/#
-
-#---------------------
-
-# This affects all clients.
-pattern write $SYS/broker/connection/%c/state
-
-```
-Mosquitto pwfile:
-```
-weemqtt:$7$101$a14xGSHNx4BHY3vF$OlDvizhNhZYhrzUBH+SKEmLJTgwnwZJqqMTECsMu6Xw5iFfBI8ETKJ+xckOM0qA3SDPC6d1fQKLTCh7yf6CzLQ==
-```
-
-Mosquitto pskfile for reference:
-```
-weemqtt:weepass
-```
-
-Mosquitto conf.d/local.conf file:
-```
-persistence false
-allow_anonymous true
-password_file /etc/mosquitto/pwfile
-acl_file /etc/mosquitto/acl
-listener 1883
-protocol mqtt
-listener 9001
-protocol websockets
-```
-
-Mosquitto mosquitto.conf:
-```
-# Place your local configuration in /etc/mosquitto/conf.d/
-#
-# A full description of the configuration file is at
-# /usr/share/doc/mosquitto/examples/mosquitto.conf.example
-
-#pid_file /run/mosquitto/mosquitto.pid
-
-persistence true
-persistence_location /var/lib/mosquitto/
-
-log_dest file /var/log/mosquitto/mosquitto.log
-
-include_dir /etc/mosquitto/conf.d
-
-#---- dial up the logging ----
-# uncomment some or all of these for more logging
-# (they can be 'very' verbose)
-#
-# log_type debug
-# log_type error
-# log_type warning
-# log_type notice
-# log_type information
-# log_type subscribe
-# log_type unsubscribe
-# log_type websockets
-# log_type all
-```
-
-weewx.conf MQTT section:
-```
-    [[MQTT]]
-        enable = true
-        server_url = mqtt://weemqtt:weepass@34.210.111.113:1883/
-        topic = weather
-        aggregation = aggregate
-        binding = loop,archive
-        log_success = true
-        log_failure = true
-```
-weewx.conf Belchertown mqtt items:
-```
-           mqtt_websockets_enabled = 1
-           mqtt_websockets_host = 34.210.111.113
-           mqtt_websockets_port = 9001
-           mqtt_websockets_ssl = 0
-           mqtt_websockets_topic = weather/loop
-           mqtt_websockets_username = weemqtt
-           mqtt_websockets_password = weepass
-           disconnect_live_website_visitor = 1800000
-           show_last_updated_alert = 0
-           last_updated_alert_threshold = 1800
-           webpage_autorefresh = 0
-```
-Permissions - lightly edited to line the columns up:
-```
-drwxr-xr-x 5 root root           4096 Feb 17 16:08 /etc/mosquitto
-drwxr-xr-x 2 root root           4096 Feb 16 12:19 /etc/mosquitto/ca_certificates
--rw-r--r-- 1 root root             73 Apr 15  2024 /etc/mosquitto/ca_certificates/README
--rw-r--r-- 1 root root            230 Sep 18  2023 /etc/mosquitto/aclfile.example
--rw-r--r-- 1 root root            355 Sep 18  2023 /etc/mosquitto/pwfile.example
--rw-r--r-- 1 root root            544 Feb 16 13:46 /etc/mosquitto/mosquitto.conf
-drwxr-xr-x 2 root root           4096 Feb 17 08:23 /etc/mosquitto/conf.d
--rw-r--r-- 1 root root            142 Apr 15  2024 /etc/mosquitto/conf.d/README
--rw-r--r-- 1 root root            166 Feb 17 08:23 /etc/mosquitto/conf.d/local.conf
-drwxr-xr-x 2 root root           4096 Feb 16 12:19 /etc/mosquitto/certs
--rw-r--r-- 1 root root            130 Apr 15  2024 /etc/mosquitto/certs/README
--rwx------ 1 mosquitto mosquitto   16 Feb 16 15:36 /etc/mosquitto/pskfile
--rw-r--r-- 1 root root             23 Sep 18  2023 /etc/mosquitto/pskfile.example
--rwx------ 1 mosquitto mosquitto  335 Feb 17 16:08 /etc/mosquitto/acl
--rwx------ 1 mosquitto mosquitto  121 Feb 16 15:36 /etc/mosquitto/pwfile
-```
+### Detailed WeeWX configuration info
 
 weewx extensions
 ```
@@ -312,7 +115,7 @@ $ weectl extension list
 Using configuration file /home/ubuntu/weewx-data/weewx.conf
 Extension Name    Version   Description
 Belchertown       1.7beta2-new-belchertownA clean modern skin with real time streaming updates and interactive charts. Modeled after BelchertownWeather.com
-mqtt              0.24vds   Upload weather data to MQTT server.
+mqtt              0.24   Upload weather data to MQTT server.
 ```
 
 pip modules in the venv
@@ -336,3 +139,7 @@ requests           2.32.5
 urllib3            2.6.3
 weewx              5.2.0
 ```
+----
+### Credits
+
+Thanks to Gary Hammer for helping me battle through this....
