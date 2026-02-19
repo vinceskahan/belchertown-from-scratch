@@ -103,7 +103,7 @@ This file configures the mosquitto broker to use the aclfile (access control) an
 
 ### (optional) Enable logging via mosquitto.conf as needed
 
-* If you want to (at least temporarily) increase the verbosity of the mosquitto logs, append the following to /etc/mosquitto/mosquitto.conf and uncomment the desired line(s).  This is generally only helpful during initial setup and checkout.  In usual operation the weewx logging should suffice.
+If you want to (at least temporarily) increase the verbosity of the mosquitto logs, append the following to `/etc/mosquitto/mosquitto.conf` and uncomment the desired line(s).  This is generally only helpful during initial setup and checkout.  In usual operation the weewx logging should suffice.
 
 
         #---- append to /etc/mosquitto/mosquitto.conf to dial up the logging ----
@@ -354,3 +354,13 @@ requests           2.32.5
 urllib3            2.6.3
 weewx              5.2.0
 ```
+
+----
+## Possible To-Do List
+
+Add more info on how to encrypt the MQTT traffic and switch to port 8883
+* this will need a howto of its own, based on which certs to use and how to get them
+* using LE certs might be problematic since they rotate so quickly - how will a server setup keep up ?
+* using self-signed certs might be even more difficult
+* and how could folks 'securely' run on LAN with access tunneled or proxied back in from Internet ?
+

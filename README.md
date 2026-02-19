@@ -41,7 +41,7 @@ Reconfigure to enable websockets
 ### 1. Install weewx
 Follow the weewx QuickStart instructions [(link)](https://www.weewx.com/docs/5.2/)
 
-Note - For 'pip'installations remember to activate your python venv before running `weectl`
+Note - For 'pip' installations remember to activate your python venv before running `weectl`
 
 ### 2. Install a webserver and integrate it with WeeWX
 
@@ -105,40 +105,7 @@ Add more info on how to encrypt the MQTT traffic and switch to port 8883
 * using self-signed certs might be even more difficult
 * and how could folks 'securely' run on LAN with access tunneled or proxied back in from Internet ?
 
-----
 
-### Detailed WeeWX configuration info
-
-weewx extensions
-```
-$ weectl extension list
-Using configuration file /home/ubuntu/weewx-data/weewx.conf
-Extension Name    Version   Description
-Belchertown       1.7beta2-new-belchertownA clean modern skin with real time streaming updates and interactive charts. Modeled after BelchertownWeather.com
-mqtt              0.24   Upload weather data to MQTT server.
-```
-
-pip modules in the venv
-```
-$ pip3 list
-Package            Version
------------------- -----------
-certifi            2026.1.4
-charset-normalizer 3.4.4
-configobj          5.0.9
-ct3                3.4.0.post5
-ephem              4.2
-idna               3.11
-paho-mqtt          2.1.0
-pillow             12.1.1
-pip                24.0
-PyMySQL            1.1.2
-pyserial           3.5
-pyusb              1.3.1
-requests           2.32.5
-urllib3            2.6.3
-weewx              5.2.0
-```
 ----
 ### Credits
 
