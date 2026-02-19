@@ -95,17 +95,6 @@ Now that WeeWX and Belchertown are stable, we enable websockets support.
 
 Please see [LINK](configure-websockets-no-encryption.md) for the long howto....
 
-
-----
-## Futures
-
-Add more info on how to encrypt the MQTT traffic and switch to port 8883
-* this will need a howto of its own, based on which certs to use and how to get them
-* using LE certs might be problematic since they rotate so quickly - how will a server setup keep up ?
-* using self-signed certs might be even more difficult
-* and how could folks 'securely' run on LAN with access tunneled or proxied back in from Internet ?
-
-
 ----
 ### Credits
 
