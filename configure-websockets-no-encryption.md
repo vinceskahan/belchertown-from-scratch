@@ -1,12 +1,12 @@
-# Configure websockets without encryption
+## Configure websockets without encryption
 
-## About this document
+### About this document
 
 This document shows how to add websockets support to a WeeWX + Belchertown system that has been previously set up and integrated with a webserver such as nginx.  There are a number of installation and testing steps required.
 
 Now that we know mosquitto itself is up and running correctly without any access control, we can move on to enabling mosquitto access control and reconfiguring WeeWX and the Belchertown skin for websockets.
 
-## 1. Check your locale
+### 1. Check your locale
 
 Run the 'locale' command and make sure you have a valid locale set.  For a US English user it should return the following:
 
@@ -29,16 +29,16 @@ Run the 'locale' command and make sure you have a valid locale set.  For a US En
 
 If the locale isn't set properly, consult your os documentation for how to reconfigure your system locale.  For a raspberry pi you can run `sudo raspi-config` and pick the Localization => Locale option in the menu.
 
-## 2. Install the mosquitto MQTT software
+### 2. Install the mosquitto MQTT software
 
         sudo apt-get update
         sudo apt-get install -y mosquitto mosquitto-clients
 
-## 3. Set up MQTT read/write access control
+### 3. Set up MQTT read/write access control
 
 You'll have to `sudo bash` to open a bash shell for these steps.
 
-### Create the /etc/mosquitto/aclfile 
+#### Create the /etc/mosquitto/aclfile 
 
 This example sets up read/write access for a 'weemqtt' user to a number of possible MQTT topics.
 
@@ -62,7 +62,7 @@ This example sets up read/write access for a 'weemqtt' user to a number of possi
         chmod 0700 /etc/mosquitto/aclfile
 
 
-### Create Mosquitto password files
+#### Create Mosquitto password files
 
 This example follows a multi-step procedure so you have a cleartext file (appropriately secured) with the user:pass so it's not forgotten or misplaced.
  
@@ -89,7 +89,7 @@ This example follows a multi-step procedure so you have a cleartext file (approp
         chown mosquitto:mosquitto /etc/mosquitto/pskfile /etc/mosquitto/pwfile
 
 
-### Create the mosquitto site configuration file
+#### Create the mosquitto site configuration file
 
 This file configures the mosquitto broker to use the aclfile (access control) and pwfile (user authorization), and to listen on the appropriate network ports
 
@@ -106,7 +106,7 @@ This file configures the mosquitto broker to use the aclfile (access control) an
         protocol websockets
 
 
-### (optional) Enable logging via mosquitto.conf as needed
+#### (optional) Enable logging via mosquitto.conf as needed
 
 If you want to (at least temporarily) increase the verbosity of the mosquitto logs, append the following to `/etc/mosquitto/mosquitto.conf` and uncomment the desired line(s).  This is generally only helpful during initial setup and checkout.  In usual operation the weewx logging should suffice.
 
@@ -126,7 +126,7 @@ If you want to (at least temporarily) increase the verbosity of the mosquitto lo
         # log_type all
 
 
-## 4. Verify your permissions
+### 4. Verify your permissions
 
 Mosquitto is 'very' sensitive to permissions, and it is necessary to validate your acl and usernames/passwords are appropriately secured. Run `find /etc/mosquitto | exec ls -lad {} \;` and examine the output.
 
@@ -150,7 +150,7 @@ The command output should look like the following (lightly edited to line the co
 
 Mosquitto will fail to start if permissions are incorrect on the aclfile and pwfile.  We lock down the pskfile because it is an unused hint file for reference so you can find what the authorized user's encrypted password in the pwfile maps to.
 
-## 5. Restart mosquitto and retest
+### 5. Restart mosquitto and retest
 
 * Restart mosquitto
 
@@ -214,7 +214,7 @@ Mosquitto will fail to start if permissions are incorrect on the aclfile and pwf
   At this point you can now reconfigure weewx.conf to use websockets
 
 
-## 6. Install the weewx-mqtt extension
+### 6. Install the weewx-mqtt extension
 
 This example uses Matthew's original weewx-mqtt extension, but other options are available.  See the WeeWX wiki for alternate extensions.
 
@@ -222,7 +222,7 @@ This example uses Matthew's original weewx-mqtt extension, but other options are
 
 This extension comes set 'enabled' but unconfigured by default, so weewx will fail if you restart it immediately after installing the extension.  We configure it next below.
 
-## 7. Reconfigure WeeWX to use websockets
+### 7. Reconfigure WeeWX to use websockets
 
 >[!CAUTION]
 > Substitute in your ip address or fully-qualified-domain-name or hostname for nnn.nnn.nnn.nnn in the following section.  It is 'critically' important these two match. If you use a name it must resolve successfully on all clients you want to be able to access your site via websockets.
@@ -256,7 +256,7 @@ Edit the Belchertown section of weewx.conf mqtt-related settings:
            webpage_autorefresh = 0
 ```
 
-## 8. Restart weewx and check for errors
+### 8. Restart weewx and check for errors
 
 Finally restart weewx and check your weewx logs for errors.  If you have `log_success = true` above (recommended at least initially) you should see weewx publishing to your broker.
     
@@ -290,7 +290,7 @@ Finally restart weewx and check your weewx logs for errors.  If you have `log_su
     Feb 19 10:06:44 raspberrypi weewxd[2452]: INFO weewx.restx: MQTT: Published record 2026-02-19 10:06:44 PST (1771524404)
     ```
 
-## 9. Try it out !!!!
+### 9. Try it out !!!!
 
 Typically a system reboot makes this process a little easier. Be sure to wait 5-10 minutes to let things stabilize and have WeeWX run the Belchertown report which generates the underlying javascript that makes the realtime updates subscription work under the hood.
 
@@ -301,7 +301,7 @@ Typically a system reboot makes this process a little easier. Be sure to wait 5-
 >[!TIP]
 > Patience is needed here.  It takes a few seconds to start showing realtime updates.  If it is failing for some reason it might take 20 seconds to see the Failed message
 > 
-### Expected screens in the browser
+#### Expected screens in the browser
 
 * You should see a 'connecting' message
         <p> <img src="connecting-screen.png" alt="connecting" width="600" height="200"><p>
@@ -310,7 +310,7 @@ Typically a system reboot makes this process a little easier. Be sure to wait 5-
 * If it fails, you will see:
         <p> <img src="failure-screen.png" alt="connecting" width="560" height="160"><p>
 
-## 10. It failed - now what ?
+### 10. It failed - now what ?
 If you see a failure:
 * verify the 'Published record' messages are appearing in your WeeWX log
 * verify there are no permission denied or the like in your mosquitto log
@@ -325,11 +325,11 @@ For some os and browsers, MacOS Tahoe 26.2 and Safari for example, initial attem
 
 ---
 
-### Testing notes:
+#### Testing notes:
 
 This was tested on a Raspberry Pi running the Debian13-based RaspiOS, and also on an AWS Lightsail instance based on Ubuntu 24.04 LTS which is also Debian13-based.   Testing was done with both Chrome and Safari browsers on a variety of iPhone, iPad, and Mac Mini client computers.
 
-#### weewx extensions on the test servers
+##### weewx extensions on the test servers
 ```
 $ weectl extension list
 Using configuration file /home/ubuntu/weewx-data/weewx.conf
@@ -338,7 +338,7 @@ Belchertown       1.7beta2-new-belchertownA clean modern skin with real time str
 mqtt              0.24   Upload weather data to MQTT server.
 ```
 
-#### pip modules in the venv on the test servers
+##### pip modules in the venv on the test servers
 ```
 $ pip3 list
 Package            Version
@@ -361,11 +361,11 @@ weewx              5.2.0
 ```
 
 ----
-## Possible To-Do List
+### Possible To-Do List
 
 Add more info on how to encrypt the MQTT traffic and switch to port 8883
 * this will need a howto of its own, based on which certs to use and how to get them
 * using LE certs might be problematic since they rotate so quickly - how will a server setup keep up ?
 * using self-signed certs might be even more difficult
-* and how could folks 'securely' run on LAN with access tunneled or proxied back in from Internet ?
+
 

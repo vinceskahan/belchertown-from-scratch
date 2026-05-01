@@ -1,5 +1,5 @@
 
-# Belchertown websockets from scratch
+## Belchertown websockets from scratch
 The intent of this document is to do a step-by-step walkthrough of how to get the weewx Belchertown skin working with live data via websockets.
 
 This is documented in two pieces, first the basic weewx and nginx installation and configuration, and then a separate document with how to enable and test websockets and the Belchertown skin end-to-end.
@@ -11,14 +11,14 @@ There are two variants of Belchertown at this time:
 
 Both variants are installed and configured identically.  The only difference is that the fork is under active development at this time.  The original Belchertown has not been updated in a couple years.
 
-## About Security
+### About Security
 
 > [!IMPORTANT]
 > This document assumes there is 'nothing' private in your station web data, meaning that we will not attempt to encrypt the MQTT nor Websockets traffic in these instructions.
 >
 > We 'highly' recommend securing the ability to write to your MQTT broker with a username/password and 'not' permitting unauthenticated world-write.
 
-## Basic Steps
+### Basic Steps
 The typical WeeWX procedures apply for installing and enabling the Belchertown skin, but enabling websockets support has additional steps.  Some use of `sudo` to do privileged tasks is required:
 
 Install Belchertown
@@ -36,14 +36,14 @@ Reconfigure to enable websockets
 * do a final test
 
 ---
-## Install WeeWX and the Belchertown skin
+### Install WeeWX and the Belchertown skin
 
-### 1. Install weewx
+#### 1. Install weewx
 Follow the weewx QuickStart instructions [(link)](https://www.weewx.com/docs/5.2/)
 
 Note - For 'pip' installations remember to activate your python venv before running `weectl`
 
-### 2. Install a webserver and integrate it with WeeWX
+#### 2. Install a webserver and integrate it with WeeWX
 
   * `sudo apt install -y nginx`
   * `sudo mkdir /var/www/html`
@@ -57,7 +57,7 @@ Note - For 'pip' installations remember to activate your python venv before runn
 
 The result is that your weewx web pages will be at `http://YOURHOSTHERE/weewx` by default
     
-### 3. Install the Belchertown skin
+#### 3. Install the Belchertown skin
 
 Run `weectl extension install` and specify the URL of the skin:
 
@@ -67,7 +67,7 @@ Run `weectl extension install` and specify the URL of the skin:
     * `https://github.com/uajqq/weewx-belchertown-new/archive/refs/heads/master.zip`
 
 
-### 4. Enable Belchertown for initial testing
+#### 4. Enable Belchertown for initial testing
 
 Restart weewx via `sudo systemctl restart weewx` and wait your archive period, typically 5 minutes, for weewx to run its reports. Then open the Belchertown skin output URL in your browser.
 
@@ -76,7 +76,7 @@ Initial default setup will write Belchertown skin output to a 'belchertown' (low
 >[!NOTE]
 >Belchertown is unusual in that it does its magic via javascript which is generated as a weewx report output file. When you change anything Belchertown related in weewx.conf you need to wait until the reports run and the .js file is updated.  You might need to stop/start or reload your browser to make the underlying javascript take effect.
 
-### 5. Restart weewx
+#### 5. Restart weewx
 Normal weewx procedures apply, typically `sudo systemctl restart weewx`
 
 Check your system logs to ensure weewx works reliably through a couple report cycles.
@@ -89,13 +89,14 @@ By default if you are using http (not https) you may see errors related to 'Wind
 
 ----
 
-## Reconfigure to enable websockets
+### Optional websockets
+ Optionally you may reconfigure to enable websockets
 
-Now that WeeWX and Belchertown are stable, we enable websockets support.
-
-Please see [LINK](configure-websockets-no-encryption.md) for the long howto....
+* how to enable LAN-only Belchertown+websockets - [(LINK)](configure-websockets-no-encryption.md)
+* how to configure Internet access to your Belchertown+websockets LAN server via cloudflared - [(LINK)](configure-cloudflare-tunnel.md)
 
 ----
 ### Credits
 
-Thanks to Gary Hammer for helping me battle through this....
+* Thanks to Gary Hammer for helping me battle through websockets and MQTT....
+* Thanks to Anton Diedericks for his notes re: how to tunnel via cloudflared
