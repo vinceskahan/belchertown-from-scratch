@@ -63,10 +63,10 @@ sudo mkdir /etc/cloudflared
 
     ingress:
         - hostname: www.mydomain.org
-            service: http://127.0.0.1:80
+          service: http://127.0.0.1:80
 
         - hostname: mqtt.mydomain.org
-            service: ws://localhost:9001
+          service: ws://localhost:9001
         
         - service: http_status:404
 ```
