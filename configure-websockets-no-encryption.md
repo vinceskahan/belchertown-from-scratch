@@ -128,7 +128,7 @@ If you want to (at least temporarily) increase the verbosity of the mosquitto lo
 
 ### 4. Verify your permissions
 
-Mosquitto is 'very' sensitive to permissions, and it is necessary to validate your acl and usernames/passwords are appropriately secured. Run `find /etc/mosquitto | exec ls -lad {} \;` and examine the output.
+Mosquitto is 'very' sensitive to permissions, and it is necessary to validate your acl and usernames/passwords are appropriately secured. Run `find /etc/mosquitto -exec ls -lad {} \;` and examine the output.
 
 The command output should look like the following (lightly edited to line the columns up):
 
